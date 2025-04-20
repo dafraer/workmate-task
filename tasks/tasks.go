@@ -15,6 +15,11 @@ const (
 	finished = "finished"
 )
 
+type TaskExecutor interface {
+	CreateTask(payload []byte) string
+	GetTaskResult(id string) (Task, error)
+}
+
 type TaskManager struct {
 	tasks map[string]*Task
 	mx    sync.RWMutex
@@ -35,7 +40,7 @@ func NewTaskManager() *TaskManager {
 	}
 }
 
-// AddTask adds a new task and runs it in a seperate goroutine
+// CreateTask adds a new task and runs it in a separate goroutine
 func (tm *TaskManager) CreateTask(payload []byte) string {
 	tm.mx.Lock()
 	defer tm.mx.Unlock()
@@ -53,14 +58,14 @@ func (tm *TaskManager) CreateTask(payload []byte) string {
 	tm.tasks[id] = task
 
 	//Run the task in a separate goroutine
-	go task.Run()
+	go task.run()
 
 	//Return the id of the task
 	return id
 }
 
 // Run simulates running I/O bound task
-func (t *Task) Run() {
+func (t *Task) run() {
 	t.mx.Lock()
 	t.Status = running
 	t.mx.Unlock()
@@ -75,10 +80,10 @@ func (t *Task) Run() {
 // GetTaskResult returns the result of the task with the given id
 func (tm *TaskManager) GetTaskResult(id string) (Task, error) {
 	tm.mx.RLock()
-	defer tm.mx.RUnlock()
 
 	//Get the tak from the task manager
 	task, ok := tm.tasks[id]
+	tm.mx.RUnlock()
 
 	//Check if the task exists
 	if !ok {
@@ -87,7 +92,6 @@ func (tm *TaskManager) GetTaskResult(id string) (Task, error) {
 
 	//Delete the task from the task manager if it is finished
 	if task.Status == finished {
-		tm.mx.RUnlock()
 		tm.mx.Lock()
 		delete(tm.tasks, id)
 		tm.mx.Unlock()

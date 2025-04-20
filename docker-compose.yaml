@@ -1,0 +1,9 @@
+services:
+  workmate_task:
+    #Make sure to change architecture to the one used on your machine
+    image: "dafraer/workmate_task:1.0-arm64"
+    #Change port if needed
+    ports:
+      - "8080:8080"
+    container_name: workmate_task
+    restart: always

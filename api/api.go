@@ -12,12 +12,20 @@ import (
 )
 
 type Service struct {
-	TaskManager *tasks.TaskManager
+	TaskManager tasks.TaskExecutor
 	logger      *zap.SugaredLogger
 }
 
-// NewService creates a new Service
-func NewService(logger *zap.SugaredLogger, tm *tasks.TaskManager) *Service {
+type runRequest struct {
+	Payload []byte
+}
+
+type runResponse struct {
+	Id string
+}
+
+// New creates a new Service
+func New(logger *zap.SugaredLogger, tm tasks.TaskExecutor) *Service {
 	return &Service{
 		TaskManager: tm,
 		logger:      logger,
@@ -33,8 +41,8 @@ func (s *Service) Run(ctx context.Context, address string) error {
 	}
 
 	//Two REST routes: one for creating a task and another for getting the result of a task
-	http.HandleFunc("/task/run", s.RunTaskHandler)
-	http.HandleFunc("/task/get/{id}", s.GetTaskHandler)
+	http.HandleFunc("/task/run", s.runTaskHandler)
+	http.HandleFunc("/task/get/{id}", s.getTaskHandler)
 
 	//Create a channel to listen for errors
 	ch := make(chan error)
@@ -66,19 +74,19 @@ func (s *Service) Run(ctx context.Context, address string) error {
 	return nil
 }
 
-// RunTaskHandler creates a new task and returns its ID
-func (s *Service) RunTaskHandler(w http.ResponseWriter, r *http.Request) {
-	var payload []byte
-	//Decode the paylaod from the request body
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+// runTaskHandler creates a new task and returns its ID
+func (s *Service) runTaskHandler(w http.ResponseWriter, r *http.Request) {
+	var taskPayload runRequest
+	//Decode the payload from the request body
+	if err := json.NewDecoder(r.Body).Decode(&taskPayload); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.logger.Errorw("Error decoding json", "error", err)
 		return
 	}
 
 	//Create a new task with the given payload
-	id := s.TaskManager.CreateTask(payload)
-	response, err := json.Marshal(map[string]string{"id": id})
+	id := s.TaskManager.CreateTask(taskPayload.Payload)
+	response, err := json.Marshal(runResponse{id})
 	if err != nil {
 		http.Error(w, "Error marshaling json", http.StatusInternalServerError)
 		s.logger.Errorw("Error marshaling json", "error", err)
@@ -92,10 +100,10 @@ func (s *Service) RunTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetTaskHandler returns the result of a task by its ID
-func (s *Service) GetTaskHandler(w http.ResponseWriter, r *http.Request) {
+// getTaskHandler returns the result of a task by its ID
+func (s *Service) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the task ID from the URL
-	id := r.URL.Query().Get("id")
+	id := r.PathValue("id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
