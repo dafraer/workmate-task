@@ -6,6 +6,8 @@ import (
 	"github.com/dafraer/workmate-task/api"
 	"github.com/dafraer/workmate-task/tasks"
 	"go.uber.org/zap"
+	"os"
+	"os/signal"
 )
 
 func main() {
@@ -21,8 +23,12 @@ func main() {
 	//Create a new service
 	service := api.New(logger.Sugar(), tm)
 
+	//Context that cancels on os.Interrupt
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	//Run the service
-	if err := service.Run(context.Background(), ":8080"); err != nil {
+	if err := service.Run(ctx, ":8080"); err != nil {
 		panic(err)
 	}
 }
