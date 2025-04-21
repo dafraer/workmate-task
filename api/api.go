@@ -32,7 +32,7 @@ func New(logger *zap.SugaredLogger, tm tasks.TaskExecutor) *Service {
 	}
 }
 
-// Run starts the HTTP server
+// Run starts an HTTP server
 func (s *Service) Run(ctx context.Context, address string) error {
 	//Create a new http server
 	srv := &http.Server{
