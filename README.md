@@ -23,7 +23,7 @@
 В терминале на linux/macOS запустите следующую команду:
 
 ```sh
-wget https://raw.githubusercontent.com/dafraer/workmate-task/refs/heads/main/docker-compose.yaml?token=GHSAT0AAAAAAC6EACDN6IWZ62MJHS4MLBYC2AGPQCQ
+wget https://raw.githubusercontent.com/dafraer/workmate-task/refs/heads/main/docker-compose.yaml
 ```  
 
 #### 2. Настройка архитектуры и переменных окружения
