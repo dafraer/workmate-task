@@ -11,6 +11,12 @@ import (
 )
 
 func main() {
+	//Check that port has been specified
+	if len(os.Args) < 2 {
+		panic("Port needs to be passed as an argument")
+	}
+	port := os.Args[1]
+
 	// Create a task manager
 	tm := tasks.NewTaskManager()
 
@@ -28,7 +34,7 @@ func main() {
 	defer cancel()
 
 	//Run the service
-	if err := service.Run(ctx, ":8080"); err != nil {
+	if err := service.Run(ctx, port); err != nil {
 		panic(err)
 	}
 }

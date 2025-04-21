@@ -6,6 +6,6 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o task .
+RUN go build -o task ./cmd
 
-CMD ["sh", "-c", "./task"]
+CMD ["sh", "-c", "./task $PORT"]
