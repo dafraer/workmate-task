@@ -1,7 +1,7 @@
 package tasks
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -87,7 +87,7 @@ func (tm *TaskManager) GetTaskResult(id string) (Task, error) {
 
 	//Check if the task exists
 	if !ok {
-		return Task{}, fmt.Errorf("task not found")
+		return Task{}, errors.New("task not found")
 	}
 
 	//Delete the task from the task manager if it is finished
