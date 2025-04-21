@@ -49,7 +49,13 @@ sudo docker-compose up -d
 git clone https://github.com/dafraer/workmate-task.git
 ```  
 
-#### 2. В терминале на linux/macOS запустите следующую команду указав подходящий вам порт:
+#### 2. Откройте репозиторий проекта
+
+```sh
+cd ./workmate-task
+```  
+
+#### 3. В терминале на linux/macOS запустите следующую команду указав подходящий вам порт:
 
 ```sh
 go run ./cmd/main.go :8080
