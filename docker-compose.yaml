@@ -1,7 +1,7 @@
 services:
   workmate_task:
     #Make sure to change architecture to the one used on your machine
-    image: "dafraer/workmate-task:2.0-arm64"
+    image: "dafraer/workmate-task:3.0-arm64"
     #Change port if needed
     environment:
       PORT: ":8080"
