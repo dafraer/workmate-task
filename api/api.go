@@ -16,14 +16,6 @@ type Service struct {
 	logger      *zap.SugaredLogger
 }
 
-type runRequest struct {
-	Payload []byte
-}
-
-type runResponse struct {
-	Id string
-}
-
 // New creates a new Service
 func New(logger *zap.SugaredLogger, tm tasks.TaskExecutor) *Service {
 	return &Service{
@@ -34,6 +26,9 @@ func New(logger *zap.SugaredLogger, tm tasks.TaskExecutor) *Service {
 
 // Run starts an HTTP server
 func (s *Service) Run(ctx context.Context, address string) error {
+	//Wait for the tasks to finish when shutting down the server
+	defer s.TaskManager.Stop()
+
 	//Create a new http server
 	srv := &http.Server{
 		Addr:        address,
@@ -42,7 +37,7 @@ func (s *Service) Run(ctx context.Context, address string) error {
 
 	//Two REST routes: one for creating a task and another for getting the result of a task
 	http.HandleFunc("/task/run", s.runTaskHandler)
-	http.HandleFunc("/task/get/{id}", s.getTaskHandler)
+	http.HandleFunc("/task/get", s.getTaskHandler)
 
 	//Create a channel to listen for errors
 	ch := make(chan error)
@@ -74,6 +69,14 @@ func (s *Service) Run(ctx context.Context, address string) error {
 	return nil
 }
 
+type runRequest struct {
+	Payload []byte `json:"payload"`
+}
+
+type runResponse struct {
+	ID string `json:"id"`
+}
+
 // runTaskHandler creates a new task and returns its ID
 func (s *Service) runTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var taskPayload runRequest
@@ -100,10 +103,17 @@ func (s *Service) runTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type getTaskResponse struct {
+	ID      string           `json:"id"`
+	Status  tasks.TaskStatus `json:"status"`
+	Payload []byte           `json:"payload"`
+	Result  []byte           `json:"result"`
+}
+
 // getTaskHandler returns the result of a task by its ID
 func (s *Service) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the task ID from the URL
-	id := r.PathValue("id")
+	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
@@ -112,12 +122,16 @@ func (s *Service) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the task result from the TaskManager
 	task, err := s.TaskManager.GetTaskResult(id)
 	if err != nil {
-		http.Error(w, "task with the specified ID does not exist", http.StatusInternalServerError)
+		if errors.Is(err, tasks.ErrTaskNotFound) {
+			http.Error(w, "task with the specified ID does not exist", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Marshal the task result to JSON
-	response, err := json.Marshal(task)
+	response, err := json.Marshal(getTaskResponse{ID: task.ID, Status: task.Status, Payload: task.Payload, Result: task.Result})
 	if err != nil {
 		http.Error(w, "Error marshaling json", http.StatusInternalServerError)
 		s.logger.Errorw("Error marshaling json", "error", err)

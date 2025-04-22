@@ -1,8 +1,6 @@
 package tasks
 
-import "errors"
-
-const ExampleId = "exampleId"
+const ExampleID = "exampleId"
 
 type MockTaskManager struct{}
 
@@ -11,17 +9,20 @@ func NewMockTaskManager() *MockTaskManager {
 }
 
 func (m *MockTaskManager) CreateTask(payload []byte) string {
-	return ExampleId
+	return ExampleID
 }
 
-func (m *MockTaskManager) GetTaskResult(id string) (Task, error) {
-	if id != ExampleId {
-		return Task{}, errors.New("id is wrong")
+func (m *MockTaskManager) GetTaskResult(id string) (*TaskResult, error) {
+	if id != ExampleID {
+		return &TaskResult{}, ErrTaskNotFound
 	}
-	mockTask := Task{
-		Id:      ExampleId,
-		Status:  running,
+	mockTask := &TaskResult{
+		ID:      ExampleID,
+		Status:  TaskStatusRunning,
 		Payload: []byte("payload"),
 	}
 	return mockTask, nil
+}
+
+func (m *MockTaskManager) Stop() {
 }

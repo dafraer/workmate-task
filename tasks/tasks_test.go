@@ -1,9 +1,10 @@
 package tasks
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestTask(t *testing.T) {
@@ -16,7 +17,7 @@ func TestTask(t *testing.T) {
 	//Test task result
 	task, err := tm.GetTaskResult(id)
 	assert.NoError(t, err)
-	assert.Equal(t, id, task.Id)
+	assert.Equal(t, id, task.ID)
 	assert.NotEmpty(t, task.Status)
 	assert.Equal(t, payload, task.Payload)
 	assert.Nil(t, task.Result)
